@@ -1,6 +1,37 @@
 const { log } = require('console');
 const {JSDOM} = require('jsdom')
 
+const crawlPage = async (currentUrl) => {
+  console.log(`currently crawling ${currentUrl}`)
+
+
+  try {
+    const response = await fetch(currentUrl)
+    console.log("response", response);
+
+    if (response.status > 399) {
+      console.log(`server retuned an error of: ${response.status} ${response.statusText}` );
+      return
+      
+    } 
+    const contentType = response.headers.get("content-type")
+    if (!contentType.includes("text/html")) {
+      console.log(`none html response, content type: ${contentType} on page: ${currentUrl}` );
+      return
+    }
+
+      // use text() to parse the html instead of using .json(), whic does .json()
+      const html= await response.text()
+      console.log(html);
+
+
+
+  }
+  catch (error) {
+    console.log(error.message);
+  }
+}
+
 function getURLsFromHTML(htmlBody, baseURL) {
   const urls = [];
   const dom = new JSDOM(htmlBody)
@@ -10,7 +41,7 @@ function getURLsFromHTML(htmlBody, baseURL) {
       // if the first character is a /, its a relative url
       if (linkElement.href.slice(0,1) === '/') {
           try {
-            // relative
+            // relative urls
             const urlObj = new URL(`${baseURL}${linkElement.href}`)
             console.log("urlString", urlObj);
             urls.push(urlObj.href)
@@ -20,7 +51,7 @@ function getURLsFromHTML(htmlBody, baseURL) {
           }
       } else {
         try {
-        // absolute url
+        // absolute urls
         const urlObj = new URL(linkElement.href)
         console.log("urlString", urlObj);
         urls.push(urlObj.href)
@@ -50,5 +81,6 @@ function normalizeURL(urlString) {
 
 module.exports = {
   normalizeURL,
-  getURLsFromHTML
+  getURLsFromHTML,
+  crawlPage
 }
